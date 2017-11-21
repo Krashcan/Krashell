@@ -37,30 +37,34 @@ int main(int argc, char* argv[]){
 	while(1){
 		printf("%s%s$ ", prompt, cwd);
 		getline(&cmd, &bufsize, stdin);
-		pid_t pid, wpid;
-		int status = 0;
-		pid = fork();
-		if(pid==0){
-			char* words[50];
-			char* args[50];
-			split(cmd, ' ', words);
-			int i;
-			for(i=0;strcmp(words[i], "EOF\0");i++){
-				if(i==0){
-					strcpy(cmd, words[i]);
+		char* commands[50];
+		split(cmd, ';', commands);
+		int i, j;
+		
+		for(i=0;strcmp(commands[i], "EOF\0");i++){
+			pid_t pid = fork();
+			if(pid < 0){
+				printf("Error forking child.\n");
+				exit(1);
+			}else if(pid == 0){
+				char *words[50], *args[50];
+				split(commands[i], ' ', words);
+				for(j=0;strcmp(words[j], "EOF\0");j++){
+					if(j==0){
+						strcpy(cmd, words[j]);
+					}else{
+						args[j-1] = (char*)malloc(sizeof(words[j]));
+						strcpy(args[j-1], words[j]);
+					}
 				}
-				else{
-					args[i-1] = (char*)malloc(sizeof(words[i]));
-					strcpy(args[i-1], words[i]);
-				}
+				exec_if_builtin(cmd, args);
+				exit(0);
 			}
-			exec_if_builtin(cmd, args);
-			exit(0);
-		}else if(pid < 0){
-			printf("Error occurred in creating child process \n");
-			exit(1);
 		}
-		while((wpid = wait(&status)) > 0);
+		for(i=0;strcmp(commands[i], "EOF\0");i++){
+			int status;
+			pid_t pid = wait(&status);
+		}
 	}
 
 	printf("Krashell is terminating...\n");
@@ -80,7 +84,7 @@ int builtin_compare(const void* a, const void* b){
 
 void split(char* str, char delim, char* words[50]){
 	int i, j=0, last=0;
-	for(i=0;str[i]!='\n';i++){
+	for(i=0;str[i]!='\0';i++){
 		if(str[i] == delim){
 			if(last == i){
 				last = i + 1;
@@ -94,9 +98,13 @@ void split(char* str, char delim, char* words[50]){
 		}		
 	}
 	if(last != i){
-		words[j] = (char*)malloc((i - last)*sizeof(char));
-		strncpy(words[j], str+last, sizeof(words[j])-1);
-		words[j][i-last] = '\0';
+		words[j] = (char*)malloc((i - last));
+		strncpy(words[j], str+last, i-last);
+		if(words[j][i-last-1] == '\n'){
+			words[j][i-last-1] = '\0';
+		}else{
+			words[j][i-last] = '\0';
+		}
 		words[j+1] = "EOF";
 	}
 }
