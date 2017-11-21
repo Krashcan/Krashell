@@ -11,6 +11,7 @@ void split(char* str, char delim, char* words[50]);
 int builtin_compare(const void* a, const void* b);
 int cmd_exists(char* key, int l, int r);
 void pwd_func(char** args);
+void help_func(char** args);
 void exec_if_builtin(char* cmd, char** args);
 
 typedef struct builtin{
@@ -23,7 +24,7 @@ short int builtin_sorted = 0;
 
 builtin builtin_funcs[] = {
 	{"pwd", "Prints current working directory", pwd_func},
-	{"help", "Prints"}};
+	{"help", "", help_func}};
 
 int main(int argc, char* argv[]){
 	system("clear");
@@ -128,5 +129,12 @@ void pwd_func(char** args){
 }
 
 void help_func(char** args){
-	//for(i=0;i
+	int i;
+	printf("\nFollowing functions have been implemented in krashell: \n");
+	for(i=0;i<sizeof(builtin_funcs)/sizeof(builtin);i++){
+		if(builtin_funcs[i].description != ""){
+			printf("\t%s: %s\n", builtin_funcs[i].name, builtin_funcs[i].description);
+		}
+	}
+	printf("\n");
 }
